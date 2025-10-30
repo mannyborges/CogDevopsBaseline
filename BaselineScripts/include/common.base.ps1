@@ -3,7 +3,7 @@
 #
 #
 #   Core (Common) Baseline Library
-#   Created by: Tomas Hlavacek
+
 #
 #   Please DO NOT modify this file and make sure, you use only functions from this
 #   library in your packages.
@@ -17,7 +17,7 @@
 #      (NOTE the DOT at beginning of line!)
 #
 #
-#	Prerequisites:
+#	Minimum Prerequisites:
 #      - Windows Server 2008 R2 (PowerShell v2.0 included)
 #            (module ServerManager only in W2K8 R2 and up)
 #            (try-catch only in PowerShell v2.0)
@@ -53,7 +53,6 @@
 #      Check-ScheduledTask([string]$Name, $XmlDefinition)
 #      Check-ScheduledTaskStatus([string]$Name, [switch]$Enable, [switch]$Disable)
 #      Check-ScheduledTaskRemoval([string]$Name)
-#      Check-WindowsFirewallIsOff()
 #   Filesystem functions
 #      Check-Directory([string]$Path)
 #      Check-DirectoryDelete([string]$Path, [switch]$Recursively)
@@ -63,21 +62,8 @@
 #      Check-DirectoryTree([string]$TargetPath, [string]$SourcePath, $SkipItems = @(), $SkipItemsIfExist = @())
 #      Check-Permissions([string]$Path, $Permissions = @(), [switch]$ExactMatch)
 #      Check-NetworkShare([string]$Share, [string]$Path, $Permissions = @('Everyone,READ'), $Limit = $null)
-#   IIS functions
-#      Import-WebAdministration()
-#      Check-WebConfigurationProperty([string]$Filter, [string]$Name, [string]$Value, [switch]$ReturnUpdate)
-#      Remove-WebModule([string]$Module)
-#      Check-WebGlobalModule([string]$Module, [string]$Image)
-#      Check-WebGlobalModuleEnabled([string]$Module)
-#      Check-AppPool([string]$Name)
-#      Check-WebApplication([string]$Name, [string]$Site, [string]$PhysicalPath, [string]$ApplicationPool = "DefaultAppPool")
-#      Check-WebVirtualDirectory([string]$Name, [string]$Site, [string]$Application = "", [string]$PhysicalPath)
-#      Check-IISDefaultDocuments([string[]]$Documents)
-#      Check-SMTPServiceProperty([string]$Property, $Value)
 #   XML functions
 #      Check-XmlProperty([string]$XmlPath, [string]$ElementXpath, [string]$Attribute, [string]$Value, $NameSpaces = @{})
-#   MSDeploy functions
-#      Check-MSDeployZip([string]$SourceZip, [string]$TargetDir)
 #   Log functions
 #      Write-Log([string]$Message = "", [string]$EntryType = "INFO", [string]$Category = "", [switch]$ResultOK, [switch]$ResultFailure, [string]$ResultMessage = "")
 #   Misc functions
@@ -105,14 +91,14 @@
 #
 ########################################################################################################
 
-$Script:OpsDeployApiURL = "http://illuminations.monster.com/v1"
-$Script:AltXmlDBFolder = ""
+$Script:OpsDeployApiURL = "http://SOR.cognex.com/v1"
+$Script:AltXmlDBFolder = "c:\xmlbase\"  # folder where alternate XML DB files are stored
 $Script:AltMachinesXMLFile = "Machines.xml"
 $Script:AltEnvironmentsXMLFile = "Environments.xml"
 
 # [string]$Script:Environment
 # These variables contain Environment (QA/PROD/DEV), Environment name (e.g. QA13, DEVA, ..)
-# and Environment type (e.g. QA, QAPL, MGS, MPS, Dev, Prod, ..)
+# and Environment type (e.g. QA, PERF, GOV, MPS, DEV, PROD, ..)
 # of the machine your script is running on.
 # Use it for putting logic into your packages, e.g. for switching between 
 # copying config files for differrent environments.
@@ -123,11 +109,11 @@ $Script:AltEnvironmentsXMLFile = "Environments.xml"
 [string]$Script:EnvironmentType = ""
 [string]$Script:ClusterName = ""
 
-# Implementation Branch of machine environment (e.g. Production, Site.2011.11.0, ....)
+# Implementation Branch of machine environment (e.g. Production, QA, DEV ....)
 # (info from OpsDeploy API)
 [string]$Script:ImplementationBranch = ""
 
-# Name of DataCenter where the machine is located (e.g. Bedford)
+# Name of DataCenter where the machine is located (e.g. Natick)
 # (info from OpsDeploy API)
 [string]$Script:DataCenter = ""
 
@@ -149,10 +135,10 @@ $Script:AltEnvironmentsXMLFile = "Environments.xml"
 [bool]$Script:DoLog = $true
 
 # Default local log location
-[string]$Script:LogDir = "d:\logs\baseline"
+[string]$Script:LogDir = "c:\logs\baseline"
 
 # In case of install mode, we want to create central log file in this directory
-[string]$Script:CentralLogDir = ""
+[string]$Script:CentralLogDir = "c:\logs\baseline"
 
 
 # By default, we don't do passwords checks - validating (no password input required).
@@ -170,9 +156,9 @@ $Script:AltEnvironmentsXMLFile = "Environments.xml"
 ########################################################################################################
 
 
-# Path to ORCH storage
+# Path to Remote storage
 # You should be using this variable as part of any install path
-[string]$Script:StoragePath = "" # will be set in Do-InitialSteps() with info from OpsDeploy
+[string]$Script:StoragePath = "" # will be set in Do-InitialSteps() function
 
 
 # PS commands action preferences
@@ -275,10 +261,10 @@ function Do-InitialSteps()
 		{ Write-Log -Message ("Log file: " + $Script:LogFile) }
 	else
 		{ Write-Log -Message "Log file: none" }
-	if ($Script:AltXmlDBFolder -ne "")
-		{ Write-Log -Message ("Illuminations: " + $Script:AltXmlDBFolder + " (xml folder)") }
-	else
-		{ Write-Log -Message ("Illuminations: " + $Script:OpsDeployApiURL) }
+	#if ($Script:AltXmlDBFolder -ne "")
+	#	{ Write-Log -Message ("Illuminations: " + $Script:AltXmlDBFolder + " (xml folder)") }
+	#else
+	#	{ Write-Log -Message ("Illuminations: " + $Script:OpsDeployApiURL) }
 	Write-Log -Message "**************************************************************************************"
 	Write-Log -Message ("Start Time: " + $Script:Date)
 	Write-Log -Message ("UserName: " + $Script:UserName)
@@ -318,25 +304,25 @@ function Do-InitialSteps()
 		
 		$EnvironmentsInfoXML = [xml](Get-Content -Path ($Script:AltXmlDBFolder + $Script:AltEnvironmentsXMLFile))
 	}
-	else
-	{
-		# using Illuminations
-		$MachineInfoXML = Get-HttpRequest -URL ($Script:OpsDeployApiURL+"/machines/"+$Script:ComputerName)
-		
-		if ($MachineInfoXML -eq $null)
-		{
-			Write-Log -EntryType "FATAL" -Message "Illuminations error."
-			Do-FinalSteps
-			Exit
-		}
-		
-		$Script:EnvironmentName = $MachineInfoXML.Machine.Environment
-		$Script:DataCenter = $MachineInfoXML.Machine.DataCenter
-        $Script:ClusterName = $MachineInfoXML.Machine.Cluster
-		[array]$Script:SupportedLocales = $MachineInfoXML.Machine.SupportedLocales.SupportedLocale
-		
-		$EnvironmentsInfoXML = Get-HttpRequest -URL ($Script:OpsDeployApiURL+"/environments")
-	}
+	#else
+	#{
+	#	# using Illuminations
+	#	$MachineInfoXML = Get-HttpRequest -URL ($Script:OpsDeployApiURL+"/machines/"+$Script:ComputerName)
+	#	
+	#	if ($MachineInfoXML -eq $null)
+	#	{
+	#		Write-Log -EntryType "FATAL" -Message "Illuminations error."
+	#		Do-FinalSteps
+	#		Exit
+	#	}
+	#	
+	#	$Script:EnvironmentName = $MachineInfoXML.Machine.Environment
+	#	$Script:DataCenter = $MachineInfoXML.Machine.DataCenter
+    #    $Script:ClusterName = $MachineInfoXML.Machine.Cluster
+	#	[array]$Script:SupportedLocales = $MachineInfoXML.Machine.SupportedLocales.SupportedLocale
+	#	
+	#	$EnvironmentsInfoXML = Get-HttpRequest -URL ($Script:OpsDeployApiURL+"/environments")
+	#}
 	
 	$EnvironmentInfoXML = $EnvironmentsInfoXML.Environments.Environment | ? { $_.Name -eq $Script:EnvironmentName }
 	if ($EnvironmentInfoXML -eq $null)
@@ -1667,85 +1653,6 @@ function Check-VersionAppuninstall([string]$AppName, [string]$Version)
 
 
 
-# Check COM interface
-#################################################
-function Check-COMInterface([string]$SourceFile, [string]$TargetFile, [string]$InterfaceName, [string]$RegisterParams, [switch]$Unregister)
-{
-	$Category = "COM"
-	
-	if (-not (Test-Path $SourceFile) -and -not $Unregister)
-	{
-		Write-Log -Message "$SourceFile not found" -EntryType "WARNING" -Category $Category
-		# even source file doesn't exist, we still can continue with check if target file exist
-	}
-	
-	if (-not (Test-Path $TargetFile))
-	{
-		Write-Log -Message "$TargetFile not found (skipping)" -EntryType "WARNING" -Category $Category
-		return
-	}
-	
-	# checking for unregister
-	if ($Unregister)
-	{
-		if ([Type]::GetTypeFromProgID($InterfaceName))
-		{
-			if ($Script:ValidateOnly)
-			{
-				Write-Log -Message "UNREGISTERING: interface $InterfaceName" -Category $Category -ResultFailure -ResultMessage "installed"
-			}
-			else
-			{
-				Write-Log -Message "UNREGISTERING: interface $InterfaceName" -Category $Category -ResultFailure -ResultMessage "installed (to be unregistered)"
-				$Result = Invoke-Expression "c:\WINDOWS\microsoft.net\Framework\v2.0.50727\RegAsm.exe `"$TargetFile`" /unregister 2>&1"
-				if ([Type]::GetTypeFromProgID($InterfaceName))
-				{
-					Write-Log -Message "-> unregistering COM interface $InterfaceName" -EntryType "ERROR" -ResultFailure -ResultMessage "failure"
-				}
-				else
-				{
-					Write-Log -Message "-> unregistering COM interface $InterfaceName" -ResultOK -ResultMessage "success"
-				}
-			}
-		}
-		else
-		{
-			Write-Log -Message "UNREGISTERING: interface $InterfaceName" -Category $Category -ResultOK -ResultMessage "not installed"
-		}
-	}
-	# checking if COM interface is registered
-	else
-	{
-		if ([Type]::GetTypeFromProgID($InterfaceName))
-		{
-			Write-Log -Message "interface $InterfaceName" -Category $Category -ResultOK -ResultMessage "installed"
-		}
-		# interface is not installed
-		else
-		{
-			if ($Script:ValidateOnly)
-			{
-				Write-Log -Message "interface $InterfaceName" -Category $Category -ResultFailure -ResultMessage "not installed"
-			}
-			else
-			{
-				Write-Log -Message "interface $InterfaceName" -Category $Category -ResultFailure -ResultMessage "not installed (to be installed)"
-				
-				$Result = Invoke-Expression "c:\WINDOWS\microsoft.net\Framework\v2.0.50727\RegAsm.exe `"$TargetFile`" $RegisterParams 2>&1"
-				if ([Type]::GetTypeFromProgID($InterfaceName))
-				{
-					Write-Log -Message "-> installing interface $InterfaceName" -ResultOK -ResultMessage "success"
-				}
-				else
-				{
-					Write-Log -Message "-> installing interface $InterfaceName" -EntryType "ERROR" -ResultFailure -ResultMessage "failure"
-				}
-			}
-		}
-	}
-}
-
-
 # Check Scheduled Task
 #################################################
 function Check-ScheduledTask([string]$Name, $XmlDefinition)
@@ -2078,46 +1985,7 @@ function Check-ScheduledTaskRemoval([string]$Name)
 	}
 }
 
-#   Check-WindowsFirewallIsOff
-#################################################
-function Check-WindowsFirewallIsOff()
-{
-    function Internal-CheckDisable([string]$FirewallProfile)
-    {
-        $FirewallStatus = Get-NetFirewallProfile -Profile "$FirewallProfile"
-        
-        if ($FirewallStatus.Enabled -eq "True")
-        {
-            Write-Log "$($FirewallProfile) firewall is turned on (bad) - we're going to turn it off"
-           if (-not $Script:ValidateOnly -and $FirewallStatus.Enabled -eq "True")
-            {
-                # make a change, if we're not in validate mode and firewall is ON
-                Set-NetFirewallProfile -Profile "$FirewallProfile" -Enabled False
-                # verify it
-                $FirewallStatus = Get-NetFirewallProfile -Profile "$FirewallProfile"
-                if ($FirewallStatus.Enabled -eq "True")
-                {
-                    Write-Log  "$($FirewallProfile) firewall is turned on (bad) - our script failed"
-                }
-                else
-                {
-                    Write-Log  "$($FirewallProfile) firewall is turned off (good) - we were able to turn it off"
-                }
-            }
-        }
-        else
-        {
-            Write-Log  "$($FirewallProfile) firewall is turned off (good)"
-        }
-    }
-    
-    Internal-CheckDisable "Domain"
-    Internal-CheckDisable "Public"
-    Internal-CheckDisable "Private"
-}
 
-$Script:ValidateOnly = $true
-Check-WindowsFirewallIsOff
 
 ########################################################################################################
 #
@@ -3193,540 +3061,6 @@ function Check-NetworkShare([string]$Share, [string]$Path, $Permissions = @('Eve
 ########################################################################################################
 
 
-
-
-
-
-########################################################################################################
-#
-#   IIS functions - begin
-#
-########################################################################################################
-
-
-# Import WebAdministration module
-#################################################
-function Import-WebAdministration()
-{
-	if ($Result = Get-Module WebAdministration) { return $true }
-	
-	Import-Module WebAdministration
-	
-	return $?
-}
-
-
-# Check WebConfigurationProperty
-#################################################
-function Check-WebConfigurationProperty([string]$Filter, [string]$Name, [string]$Value, [switch]$ReturnUpdate)
-{
-	$Category = "IIS"
-	
-	if (-not (Import-WebAdministration)) 
-	{
-		Write-Log -Message "Cannot load module WebAdministration" -EntryType "ERROR"
-		return
-	}
-	
-	$Item = Get-WebConfigurationProperty -filter $Filter -PSPath IIS:\ -Name $Name
-	
-	if (-not $Item)
-	{
-		if ($Script:ValidateOnly)
-		{
-			Write-Log -Message "IIS:$Filter.$Name" -Category $Category -ResultFailure -ResultMessage "not found"
-		}
-		else
-		{
-			Write-Log -Message "IIS:$Filter.$Name" -Category $Category -ResultFailure -ResultMessage "not found (to be added)"
-			
-			
-			Set-WebConfigurationProperty -filter $Filter -PSPath IIS:\ -Name $Name -value $Value -WarningVariable Warning
-			if ($Warning)
-			{
-				Write-Log -Message "-> adding IIS:$Filter.$Name" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-				if ($ReturnUpdate) { return $false }
-			}
-			else
-			{
-				Write-Log -Message "-> adding IIS:$Filter.$Name" -ResultOK -ResultMessage "OK"
-				if ($ReturnUpdate) { return $true }
-			}
-		}
-	}
-	else
-	{
-		if ($Item.GetType().Name -like "String")
-			{ $ItemValue = $Item }
-		else 
-			{ $ItemValue = $Item.Value }
-			
-		if ($ItemValue -inotlike $Value)
-		{
-			if ($Script:ValidateOnly)
-			{
-				Write-Log -Message "IIS:$Filter.$Name" -Category $Category -ResultFailure -ResultMessage "incorrect"
-			}
-			else
-			{
-				Write-Log -Message "IIS:$Filter.$Name" -Category $Category -ResultFailure -ResultMessage "incorrect (to be updated)"
-				
-				Set-WebConfigurationProperty -filter $Filter -PSPath IIS:\ -Name $Name -value $Value -WarningVariable Warning
-				if ($Warning)
-				{
-					Write-Log -Message "-> updating IIS:$Filter.$Name" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-					if ($ReturnUpdate) { return $false }
-				}
-				else
-				{
-					Write-Log -Message "-> updating IIS:$Filter.$Name" -ResultOK -ResultMessage "OK"
-					if ($ReturnUpdate) { return $true }
-				}
-			}
-		}
-		else
-		{
-			Write-Log -Message "IIS:$Filter.$Name" -Category $Category -ResultOK -ResultMessage "OK"
-			return
-		}
-	}
-}
-
-# Remove WebGlobalModule
-#################################################
-function Remove-WebModule([string]$Module)
-{
-	$Category = "IIS"
-	
-	if (-not (Import-WebAdministration)) 
-	{
-		Write-Log -Message "Cannot load module WebAdministration" -EntryType "ERROR"
-		return
-	}
-	
-	$Item = Get-WebGlobalModule | where {$_.Name -eq $Module}
-	
-	if ($Item)
-	{
-		if ($Script:ValidateOnly)
-		{
-			Write-Log -Message "module $Module" -Category $Category -ResultFailure -ResultMessage "to be removed"
-		}
-		else
-		{
-			Write-Log -Message "module $Module" -Category $Category -ResultFailure -ResultMessage "found (to be removed)"
-			
-			$Result = Remove-WebGlobalModule -Name $Module -WarningVariable Warning
-            
-			if ($Warning)
-			{
-				Write-Log -Message "-> adding module $Module" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-			}
-			else
-			{
-				Write-Log -Message "-> adding module $Module" -ResultOK -ResultMessage "success"
-			}
-		}
-	}
-	else
-	{
-		Write-Log -Message "module $Module" -Category $Category -ResultOK -ResultMessage "OK"
-	}
-}
-
-# Check WebGlobalModule
-#################################################
-function Check-WebGlobalModule([string]$Module, [string]$Image)
-{
-	$Category = "IIS"
-	
-	if (-not (Import-WebAdministration)) 
-	{
-		Write-Log -Message "Cannot load module WebAdministration" -EntryType "ERROR"
-		return
-	}
-	
-	$Item = Get-WebGlobalModule | where {$_.Name -eq $Module}
-	
-	if (-not $Item)
-	{
-		if ($Script:ValidateOnly)
-		{
-			Write-Log -Message "module $Module" -Category $Category -ResultFailure -ResultMessage "not found"
-		}
-		else
-		{
-			Write-Log -Message "module $Module" -Category $Category -ResultFailure -ResultMessage "not found (to be added)"
-			
-			$Result = New-WebGlobalModule -Name $Module -Image $Image -WarningVariable Warning
-			
-			if ($Warning)
-			{
-				Write-Log -Message "-> adding module $Module" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-			}
-			else
-			{
-				Write-Log -Message "-> adding module $Module" -ResultOK -ResultMessage "success"
-			}
-		}
-	}
-	elseif ($Item.Image -inotlike $Image)
-	{
-		if ($Script:ValidateOnly)
-		{
-			Write-Log -Message "module $Module" -Category $Category -ResultFailure -ResultMessage "image incorrect"
-		}
-		else
-		{
-			Write-Log -Message "module $Module" -Category $Category -ResultFailure -ResultMessage "image incorrect (to be updated)"
-			
-			$Result = Set-WebGlobalModule -Name $Module -Image $Image -WarningVariable Warning
-			
-			if ($Warning)
-			{
-				Write-Log -Message "-> updating module $Module image" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-			}
-			else
-			{
-				Write-Log -Message "-> updating module $Module image" -ResultOK -ResultMessage "success"
-			}
-		}
-	}
-	else
-	{
-		Write-Log -Message "module $Module" -Category $Category -ResultOK -ResultMessage "OK"
-	}
-}
-
-
-# Check WebGlobalModuleEnabled
-#################################################
-function Check-WebGlobalModuleEnabled([string]$Module)
-{
-	$Category = "IIS"
-
-	if (-not (Import-WebAdministration)) 
-	{
-		Write-Log -Message "Cannot load module WebAdministration" -EntryType "ERROR"
-		return
-	}
-	
-	$Item = Get-WebConfiguration -filter ('/system.webServer/modules/add[@name="'+$Module+'"]') -PSPath IIS:
-	
-	
-	if (-not $Item)
-	{
-		if ($Script:ValidateOnly)
-		{
-			Write-Log -Message "module $Module enabled?" -Category $Category -ResultFailure -ResultMessage "disabled"
-		}
-		else
-		{
-			Write-Log -Message "module $Module enabled?" -Category $Category -ResultFailure -ResultMessage "disabled (to be enabled)"
-			
-			$Result = Enable-WebGlobalModule -Name $Module -PSPath IIS: -WarningVariable Warning
-			
-			if ($Warning)
-			{
-				Write-Log -Message "-> enabling module $Module" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-			}
-			else
-			{
-				Write-Log -Message "-> enabling module $Module" -ResultOK -ResultMessage "success"
-			}
-		}
-	}
-	else
-	{
-		Write-Log -Message "module $Module enabled?" -Category $Category -ResultOK -ResultMessage "enabled"
-	}
-}
-
-# Check AppPool
-#################################################
-function Check-AppPool([string]$Name)
-{
-	$Category = "IIS"
-	
-	if (-not (Import-WebAdministration)) 
-	{
-		Write-Log -Message "Cannot load module WebAdministration" -EntryType "ERROR"
-		return
-	}
-	
-	if (Get-Item "IIS:\AppPools\$Name")
-	{
-		Write-Log -Message "IIS:/AppPools/$Name" -Category $Category -ResultOK -ResultMessage "found"
-	}
-	else
-	{
-		if ($Script:ValidateOnly)
-		{
-			Write-Log -Message "IIS:/AppPools/$Name" -Category $Category -ResultFailure -ResultMessage "not found"
-		}
-		else
-		{
-			Write-Log -Message "IIS:/AppPools/$Name" -Category $Category -ResultFailure -ResultMessage "not found (to be created)"
-			
-			$Result = New-WebAppPool $Name -WarningVariable Warning
-			if ($Warning)
-			{
-				Write-Log -Message "-> creating apppool $Name" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-			}
-			else
-			{
-				Write-Log -Message "-> creating apppool $Name" -ResultOK -ResultMessage "success"
-			}
-		}
-	}
-}
-
-
-# Check WebApplication
-#################################################
-function Check-WebApplication([string]$Name, [string]$Site, [string]$PhysicalPath, [string]$ApplicationPool = "DefaultAppPool")
-{
-	$Category = "IIS"
-	
-	if (-not (Import-WebAdministration)) 
-	{
-		Write-Log -Message "Cannot load module WebAdministration" -EntryType "ERROR"
-		return
-	}
-	
-	if (Get-WebApplication -Site $Site -Name $Name -WarningVariable Warning)
-	{
-		Write-Log -Message "IIS:/sites/$Site/$Name app" -Category $Category -ResultOK -ResultMessage "found"
-	}
-	else
-	{
-		if ($Script:ValidateOnly)
-		{
-			Write-Log -Message "IIS:/sites/$Site/$Name app" -Category $Category -ResultFailure -ResultMessage "not found"
-		}
-		else
-		{
-			Write-Log -Message "IIS:/sites/$Site/$Name app" -Category $Category -ResultFailure -ResultMessage "not found (to be created)"
-			
-			$Result = New-WebApplication -Name $Name -Site $Site -PhysicalPath $PhysicalPath -ApplicationPool $ApplicationPool -WarningVariable Warning
-			if ($Warning)
-			{
-				Write-Log -Message "-> creating app $Name" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-			}
-			else
-			{
-				Write-Log -Message "-> creating app $Name" -ResultOK -ResultMessage "success"
-			}
-		}
-	}
-}
-
-
-# Check WebVirtualDirectory
-#################################################
-function Check-WebVirtualDirectory([string]$Name, [string]$Site, [string]$Application = "", [string]$PhysicalPath)
-{
-	$Category = "IIS"
-	
-	if (-not (Import-WebAdministration)) 
-	{
-		Write-Log -Message "Cannot load module WebAdministration" -EntryType "ERROR"
-		return
-	}
-	
-	if (Get-WebVirtualDirectory -Site $Site -Application $Application -Name $Name -WarningVariable Warning)
-	{
-		Write-Log -Message "IIS:/sites/$Site/$Name virtual dir" -Category $Category -ResultOK -ResultMessage "found"
-	}
-	else
-	{
-		if ($Script:ValidateOnly)
-		{
-			Write-Log -Message "IIS:/sites/$Site/$Name virtual dir" -Category $Category -ResultFailure -ResultMessage "not found"
-		}
-		else
-		{
-			Write-Log -Message "IIS:/sites/$Site/$Name virtual dir" -Category $Category -ResultFailure -ResultMessage "not found (to be created)"
-			
-			$Result = New-WebVirtualDirectory -Name $Name -Site $Site -Application $Application -PhysicalPath $PhysicalPath -WarningVariable Warning
-			if ($Warning)
-			{
-				Write-Log -Message "-> creating app $Name" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-			}
-			else
-			{
-				Write-Log -Message "-> creating app $Name" -ResultOK -ResultMessage "success"
-			}
-		}
-	}
-}
-
-
-# Check IIS Default documents
-#################################################
-function Check-IISDefaultDocuments([string[]]$Documents)
-{
-	$Category = "IIS"
-	
-	$WebConfigFilesPath = "/system.webServer/defaultDocument/files"
-	
-	if (-not (Import-WebAdministration)) 
-	{
-		Write-Log -Message "Cannot load module WebAdministration" -EntryType "ERROR"
-		return
-	}
-	
-	# getting IIS configuration
-	if (-not ([string[]]$IISDefaultDocuments = Get-WebConfiguration -filter "$WebConfigFilesPath/add" -PSPath IIS:\ | foreach-object { $_.value }))
-		{ [string[]]$IISDefaultDocuments = @() }
-	
-	[string[]]$ExistingDocuments = @()
-	foreach ($file in $IISDefaultDocuments)
-	{
-		if ($Documents -icontains $file) { $ExistingDocuments += $file }
-	}
-	
-	$NeedUpdate = $false
-	$Index = 0
-	
-	foreach ($file in $Documents)
-	{
-		if ($IISDefaultDocuments -icontains $file)
-		{
-			if ([System.Array]::IndexOf($ExistingDocuments, $file) -eq $Index)
-			{
-				Write-Log -Message ("IIS:$WebConfigFilesPath`:"+$file) -Category $Category -ResultOK -ResultMessage "OK"
-			}
-			else
-			{
-				if ($Script:ValidateOnly)
-				{
-					Write-Log -Message ("IIS:$WebConfigFilesPath`:"+$file) -Category $Category -ResultFailure -ResultMessage "found, but incorrect position"
-				}
-				else
-				{
-					Write-Log -Message ("IIS:$WebConfigFilesPath`:"+$file) -Category $Category -ResultFailure -ResultMessage "found, but incorrect position (to be updated)"
-					$NeedUpdate = $true
-				}
-			}
-			$Index++
-		}
-		else
-		{
-			if ($Script:ValidateOnly)
-			{
-				Write-Log -Message ("IIS:$WebConfigFilesPath`:"+$file) -Category $Category -ResultFailure -ResultMessage "missing"
-			}
-			else
-			{
-				Write-Log -Message ("IIS:$WebConfigFilesPath`:"+$file) -Category $Category -ResultFailure -ResultMessage "missing (to be added)"
-				$NeedUpdate = $true
-			}
-		}
-	}
-	
-	foreach ($file in $IISDefaultDocuments)
-	{
-		if ($Documents -inotcontains $file)
-		{
-			if ($Script:ValidateOnly)
-			{
-				Write-Log -Message ("IIS:$WebConfigFilesPath`:"+$file) -Category $Category -ResultFailure -ResultMessage "not required"
-			}
-			else
-			{
-				Write-Log -Message ("IIS:$WebConfigFilesPath`:"+$file) -Category $Category -ResultFailure -ResultMessage "not required (to be removed)"
-				$NeedUpdate = $true
-			}
-		}
-	}
-	
-	if (-not $Script:ValidateOnly -and $NeedUpdate)
-	{
-		# deleting all items
-		Clear-WebConfiguration -filter "$WebConfigFilesPath" -PSPath IIS:\ -WarningVariable Warning
-		
-		if ($Warning)
-		{
-			Write-Log -Message "-> removing all documents" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-			return
-		}
-		else
-		{
-			Write-Log -Message "-> removing all documents" -ResultOK -ResultMessage "success"
-		}
-		
-		# adding all new
-		# probably bug in Add-WebConfiguration (not placing new items at the and of list)) -> reversing array order first
-		[System.Array]::Reverse($Documents)
-		
-		Add-WebConfiguration -filter "$WebConfigFilesPath" -PSPath IIS:\ -value $Documents -WarningVariable Warning
-			
-		if ($Warning)
-		{
-			Write-Log -Message "-> adding all documents in requested order" -EntryType "ERROR" -ResultFailure -ResultMessage $Warning[0].Message
-			return
-		}
-		else
-		{
-			Write-Log -Message "-> adding all documents in requested order" -ResultOK -ResultMessage "success"
-		}
-	}
-}
-
-
-# Check SMTP Service Property
-#################################################
-function Check-SMTPServiceProperty([string]$Property, $Value)
-{
-	$Category = "SMTP"
-	
-	if (-not ($SMTPServiceSetting = Get-WMIObject -class IIsSmtpServiceSetting -namespace "root\microsoftiisv2" -authentication 6))
-	{
-		Write-Log -Message "SMTP.$Property = $Value" -EntryType "WARNING" -Category $Category -ResultFailure -ResultMessage "SMTP service not found"
-		return
-	}
-	
-	if ($SMTPServiceSetting.GetPropertyValue($Property) -eq $Value)
-	{
-		Write-Log -Message "SMTP.$Property = $Value" -Category $Category -ResultOK -ResultMessage "OK"
-	}
-	else
-	{
-		if ($Script:ValidateOnly)
-		{
-			Write-Log -Message "SMTP.$Property = $Value" -Category $Category -ResultFailure -ResultMessage "incorrect"
-		}
-		else
-		{
-			Write-Log -Message "SMTP.$Property = $Value" -Category $Category -ResultFailure -ResultMessage "incorrect (to be updated)"
-			
-			$SMTPServiceSetting.SetPropertyValue($Property, $Value)
-			
-			if ($?)
-			{
-				$Result = $SMTPServiceSetting.Put()
-				Write-Log -Message "-> updating SMTP.$Property = $Value" -ResultOK -ResultMessage "success"
-			}
-			else
-			{
-				Write-Log -Message "-> updating SMTP.$Property = $Value" -ResultFailure -ResultMessage $Error[0].Exception.Message
-			}
-		}
-	}
-}
-
-
-########################################################################################################
-#
-#   IIS functions - end
-#
-########################################################################################################
-
-
-
-
-
 ########################################################################################################
 #
 #   XML functions - begin
@@ -3864,199 +3198,6 @@ function Check-XmlProperty([string]$XmlPath, [string]$ElementXpath, [string]$Att
 #
 ########################################################################################################
 
-
-
-
-########################################################################################################
-#
-#   MSDeploy functions - begin
-#
-########################################################################################################
-
-
-# Check MSDeployZip
-#################################################
-function Check-MSDeployZip([string]$SourceZip, [string]$TargetDir)
-{
-	<#
-	.SYNOPSIS 
-	Deploys Zip package to TargetDir location.
-
-	.PARAMETER SourceZip
-	Required.
-	Specifies the path to zip package.
-
-	.PARAMETER TargetDir
-	Required.
-	Specifies the path to folder, where the package should be deployed.
-	
-	.INPUTS
-	None. You cannot pipe objects to Check-MSDeployZip.
-
-	.OUTPUTS
-	Check-MSDeployZip doesn't return any value.
-
-	#>
-	
-	$Category = "MSDEPLOY"
-	
-	if (-not $SourceZip)
-	{
-		Write-Log -Message "SourceZip is not defined!" -Category $Category -EntryType "ERROR" -ResultFailure
-		return
-	}
-	
-	if (-not $TargetDir)
-	{
-		Write-Log -Message "TargetDir is not defined!" -Category $Category -EntryType "ERROR" -ResultFailure
-		return
-	}
-	
-	if (-not (Test-Path $SourceZip)) 
-	{
-		Write-Log -Message "Cannot find file: $SourceZip" -Category $Category -EntryType "ERROR" -ResultFailure
-		return
-	}
-	
-	#################################################
-	function Check-MSDeployZip-LoadWebDeploymentDLL
-	{
-		Try
-		{
-			[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.Web.Deployment") | Out-Null
-		}
-		Catch
-		{
-			Write-Log -Message "Cannot load Microsoft.Web.Deployment" -Category $Category -EntryType "ERROR"
-			return $false
-		}
-		return $true
-	}
-	
-	if (-not (Check-MSDeployZip-LoadWebDeploymentDLL)) 
-	{
-		return
-	}
-	
-	$DestBaseOptions = new-object Microsoft.Web.Deployment.DeploymentBaseOptions
-	#$DestBaseOptions.TraceLevel = "Verbose"
-	$SyncOptions = new-object Microsoft.Web.Deployment.DeploymentSyncOptions
-	$SyncOptions.DoNotDelete = "True" # THIS IS IMPORTANT - won't delete extra files/dirs
-	
-	if ($Script:ValidateOnly)
-		{ $SyncOptions.WhatIf = $true }
-	else
-		{ $SyncOptions.WhatIf = $false }
-	
-	Try
-	{
-	    $DeploymentObject = [Microsoft.Web.Deployment.DeploymentManager]::CreateObject("package", $SourceZip)
-		$Changes = $DeploymentObject.SyncTo("contentPath", $TargetDir, $DestBaseOptions, $SyncOptions)
-		$DeploymentObject.Dispose()
-	}
-	Catch
-	{
-		Write-Log -Message "Exception thrown: $_" -Category $Category -EntryType "ERROR"
-		return
-	}
-	
-	# Errors
-	if ($Changes.Errors -gt 0)
-		{ Write-Log -Message ("{0,-30}{1}" -f "Errors:", $Changes.Errors.ToString()) -Category $Category -EntryType "ERROR" -ResultFailure }
-	else
-		{ Write-Log -Message ("{0,-30}{1}" -f "Errors:", $Changes.Errors.ToString()) -Category $Category -EntryType "INFO" -ResultOK }
-		
-	# Warnings
-	if ($Changes.Warnings -gt 0)
-		{ Write-Log -Message ("{0,-30}{1}" -f "Warnings:", $Changes.Warnings.ToString()) -Category $Category -EntryType "WARNING" -ResultFailure }
-	else
-		{ Write-Log -Message ("{0,-30}{1}" -f "Warnings:", $Changes.Warnings.ToString()) -Category $Category -EntryType "INFO" -ResultOK }
-	
-	# Total Changes
-	if ($Changes.TotalChanges -gt 0)
-	{
-		if ($Script:ValidateOnly)
-			{ Write-Log -Message ("{0,-30}{1}" -f "Total changes to be made:", $Changes.TotalChanges.ToString()) -Category $Category -EntryType "INFO" -ResultFailure }
-		else
-			{ Write-Log -Message ("{0,-30}{1}" -f "Total changes:", $Changes.TotalChanges.ToString()) -Category $Category -EntryType "INFO" -ResultOK }
-	}
-	else
-	{
-		Write-Log -Message ("{0,-30}{1}" -f "Total Changes:", $Changes.TotalChanges.ToString()) -Category $Category -EntryType "INFO" -ResultOK
-	}
-	
-	# Bytes copied
-	if ($Changes.BytesCopied -gt 0)
-	{
-		if ($Script:ValidateOnly)
-			{ Write-Log -Message ("{0,-30}{1}" -f "Bytes to be copied:", $Changes.BytesCopied.ToString()) -Category $Category -EntryType "INFO" -ResultFailure }
-		else
-			{ Write-Log -Message ("{0,-30}{1}" -f "Bytes copied:", $Changes.BytesCopied.ToString()) -Category $Category -EntryType "INFO" -ResultOK }
-	}
-	else
-	{
-		Write-Log -Message ("{0,-30}{1}" -f "Bytes copied:", $Changes.BytesCopied.ToString()) -Category $Category -EntryType "INFO" -ResultOK
-	}
-	
-	# Objects added
-	if ($Changes.ObjectsAdded -gt 0)
-	{
-		if ($Script:ValidateOnly)
-			{ Write-Log -Message ("{0,-30}{1}" -f "Objects to be added:", $Changes.ObjectsAdded.ToString()) -Category $Category -EntryType "INFO" -ResultFailure }
-		else
-			{ Write-Log -Message ("{0,-30}{1}" -f "Objects added:", $Changes.ObjectsAdded.ToString()) -Category $Category -EntryType "INFO" -ResultOK }
-	}
-	else
-	{
-		Write-Log -Message ("{0,-30}{1}" -f "Objects added:", $Changes.ObjectsAdded.ToString()) -Category $Category -EntryType "INFO" -ResultOK
-	}
-	
-	# Objects updated
-	if ($Changes.ObjectsUpdated -gt 0)
-	{
-		if ($Script:ValidateOnly)
-			{ Write-Log -Message ("{0,-30}{1}" -f "Objects to be updated:", $Changes.ObjectsUpdated.ToString()) -Category $Category -EntryType "INFO" -ResultFailure }
-		else
-			{ Write-Log -Message ("{0,-30}{1}" -f "Objects updated:", $Changes.ObjectsUpdated.ToString()) -Category $Category -EntryType "INFO" -ResultOK }
-	}
-	else
-	{
-		Write-Log -Message ("{0,-30}{1}" -f "Objects updated:", $Changes.ObjectsUpdated.ToString()) -Category $Category -EntryType "INFO" -ResultOK
-	}
-	
-	# Objects deleted
-	if ($Changes.ObjectsDeleted -gt 0)
-	{
-		if ($Script:ValidateOnly)
-			{ Write-Log -Message ("{0,-30}{1}" -f "Objects to be deleted:", $Changes.ObjectsDeleted.ToString()) -Category $Category -EntryType "INFO" -ResultFailure }
-		else
-			{ Write-Log -Message ("{0,-30}{1}" -f "Objects deleted:", $Changes.ObjectsDeleted.ToString()) -Category $Category -EntryType "INFO" -ResultOK }
-	}
-	else
-	{
-		Write-Log -Message ("{0,-30}{1}" -f "Objects deleted:", $Changes.ObjectsDeleted.ToString()) -Category $Category -EntryType "INFO" -ResultOK
-	}
-
-	# Parameter Changes
-	if ($Changes.BytesCopied -gt 0)
-	{
-		if ($Script:ValidateOnly)
-			{ Write-Log -Message ("{0,-30}{1}" -f "Parameter changes to be made:", $Changes.ParameterChanges.ToString()) -Category $Category -EntryType "INFO" -ResultFailure }
-		else
-			{ Write-Log -Message ("{0,-30}{1}" -f "Parameter changes:", $Changes.ParameterChanges.ToString()) -Category $Category -EntryType "INFO" -ResultOK }
-	}
-	else
-	{
-		Write-Log -Message ("{0,-30}{1}" -f "Parameter changes:", $Changes.ParameterChanges.ToString()) -Category $Category -EntryType "INFO" -ResultOK
-	}
-}
-
-
-########################################################################################################
-#
-#   MSDeploy functions - end
-#
-########################################################################################################
 
 
 
@@ -4241,63 +3382,6 @@ function Get-UserInput([string]$Msg, [string]$Format, $DefaultValue)
 }
 
 
-# Get Installed App Version
-# returns version of installed app or false when not found
-#################################################
-function Get-InstalledAppVersion([string]$AppName)
-{
-	#For .NET 4.6 unfortunately this is not registered in programs and features
-    #HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full (Release = 393297)
-    #See this article https://msdn.microsoft.com/en-us/library/hh925568(v=vs.110).aspx
-      if($AppName -match "Microsoft .NET Framework 4.6|Microsoft .NET Framework 4.6.1")
-{
-        $Installed = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\full"   
-        if( $Installed.Release -match "393297|394271")
-        {
-            return $Installed.Version
-        }
-        else
-        {
-            return $false
-        }
-}
-	
-	$Apps = @()
-	if (Get-Item Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node -ErrorAction SilentlyContinue)
-	{
-		$Apps += Get-ItemProperty Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*|?{$_.DisplayName -ne $Null}|?{$_.DisplayName -ne ""}
-	}
-	$Apps += Get-ItemProperty Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*|?{$_.DisplayName -ne $Null}|?{$_.DisplayName -ne ""}
-
-	#$Installed = $Apps|?{$_.DisplayName -eq $AppName}|select -First 1
-    $Installed = $Apps|?{$_.DisplayName -match "^$([regex]::Escape($AppName))"}|select -First 1
-	
-	if($Installed -ne $null)
-		{ return $Installed.DisplayVersion }
-	else
-		{ return $false }
-}
-
-# Get Installed App Location
-# returns install location of app or false when not found
-#################################################
-function Get-InstalledAppLocation([string]$AppName)
-{
-	$Apps = @()
-	if (Get-Item Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node -ErrorAction SilentlyContinue)
-	{
-		$Apps += Get-ItemProperty Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*|?{$_.DisplayName -ne $Null}|?{$_.DisplayName -ne ""}
-	}
-	$Apps += Get-ItemProperty Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*|?{$_.DisplayName -ne $Null}|?{$_.DisplayName -ne ""}
-
-	$Installed = $Apps|?{$_.DisplayName -eq $AppName}|select -First 1
-	
-	if($Installed -ne $null)
-		{ return $Installed.InstallLocation }
-	else
-		{ return $false }
-}
-
 
 # Get Baseline Credential
 #################################################
@@ -4351,7 +3435,7 @@ function Get-HttpRequest([string]$URL)
     $request = [System.Net.WebRequest]::Create($URL)
 	$request.Proxy = $null
     $request.Method = "GET"
-    $request.Accept = "application/xml"
+    $request.Accept = "application/xml"  # Might make an input for other forms of returns like JSON in the future
 	$response = $request.GetResponse()
 		
     try
@@ -4510,7 +3594,7 @@ function Private-PrintHelp()
 	Write-Host "  -nolog              Do not create local log"
 	Write-Host "  -errors             Script will also print PS errors"
 	Write-Host "  -dopwdcheck         Script will validate passwords if any (manual input is required)"
-	Write-Host "  -illurl <URL>       Illuminations URL (default $Script:OpsDeployApiURL)"
+	#Write-Host "  -illurl <URL>       Illuminations URL (default $Script:OpsDeployApiURL)"
 	Write-Host "  -xmldb <DIR>        Instead of Illuminations use Machines.xml and Environments.xml from <DIR> folder"
 	Write-Host
 }
