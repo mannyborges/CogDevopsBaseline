@@ -1,0 +1,3 @@
+$w=Get-WindowsFeature
+$w
+

@@ -1,52 +1,50 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<employees xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:noNamespaceSchemaLocation="Environments.xsd">
+﻿<?xml version="1.0" encoding="utf-8" xsd="Environments.xsd"?>
 
-<Environments>
-    <Environment>
-        <Name>Natick-Prod</Name>
-        <Description>Environment for XXX (Prod, QA, Test)</Description>
-        <Type>Prod</Type>
-        <Datacenters>
-            <Datacenter>Natick</Datacenter>
-        </Datacenters>
-        <MaintenanceWindows>
-            <MaintenanceWindow>Sun:02:00-04:00</MaintenanceWindow>
-        </MaintenanceWindows>
-        <IpRanges>
-            <IpRange>192.168.1.0/24</IpRange>
-        </IpRanges>
-        <Owner>team_xyz</Owner>
-        <Type>On-Prem</Type>
-        <Tags>
-            <Tag>Metadata1</Tag>
-            <Tag>Metadata2</Tag>
-        </Tags>
-        <Machines>
-            <Machine>
-                <Name>Secops_Automation_Server_NAME</Name>
-                <Roles>
-                    <Role>AutomationServer</Role>
-                    <Role>CertServer</Role>
-                    <Role>FileServer</Role>
-                </Roles>
-                <Locale>GLOBAL</Locale>
-                <Datacenter>DATACENTER_NAME_</Datacenter>
-                <CPUs>2</CPUs>
-                <MemoryMB>4096</MemoryMB>
-                <Disks>
-                    <Disk>
-                        <SizeGB>60</SizeGB>
-                        <Type>NTFS</Type>
-                        <Letter>C:</Letter>
-                    </Disk>
-                </Disks>
-                <OS>WindowsServer2019</OS>
-                <Owner>Secops</Owner>
-                <Tags>
-                    <Tag>Metadata1</Tag>
-                    <Tag>Metadata2</Tag>
-                </Tags>
-            </Machine>
-        </Machines>
-    </Environment>
+<Environment>
+    <Name>Natick-Prod</Name>
+    <Description>Environment for XXX (Prod, QA, Test)</Description>
+    <Type>Prod</Type>
+    <Datacenters>
+        <Datacenter>Natick</Datacenter>
+    </Datacenters>
+    <MaintenanceWindows>
+        <MaintenanceWindow>Sun:02:00-04:00</MaintenanceWindow>
+    </MaintenanceWindows>
+    <IpRanges>
+        <IpRange>192.168.1.0/24</IpRange>
+    </IpRanges>
+    <Owner>team_xyz</Owner>
+    <Type>On-Prem</Type>
+    <Tags>
+        <Tag>Metadata1</Tag>
+        <Tag>Metadata2</Tag>
+    </Tags>
+    <Machines>
+        <Machine>
+            <Name>Secops_Automation_Server_NAME</Name>
+            <Roles>
+                <Role>AutomationServer</Role>
+                <Role>CertServer</Role>
+                <Role>FileServer</Role>
+            </Roles>
+            <Locale>Global</Locale>
+            <Datacenter>DATACENTER_NAME_</Datacenter>
+            <CPUs>2</CPUs>
+            <MemoryMB>4096</MemoryMB>
+            <Disks>
+                <Disk>
+                    <SizeGB>60</SizeGB>
+                    <Type>NTFS</Type>
+                    <Letter>C:</Letter>
+                </Disk>
+            </Disks>
+            <OS>WindowsServer2019</OS>
+            <Owner>Secops</Owner>
+            <Tags>
+                <Tag>Metadata1</Tag>
+                <Tag>Metadata2</Tag>
+            </Tags>
+        </Machine>
+    </Machines>
+</Environment>
+</Environments>

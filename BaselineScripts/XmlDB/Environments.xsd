@@ -1,0 +1,113 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="Environments">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Environment">
+          <xs:complexType>
+            <xs:choice maxOccurs="unbounded" minOccurs="0">
+              <xs:element type="xs:string" name="Name"/>
+              <xs:element type="xs:string" name="Description"/>
+                <xs:element name="Type">
+                    <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Prod"/>
+                        <xs:enumeration value="QA"/>
+                        <xs:enumeration value="Test"/>
+                        <xs:enumeration value="Dev"/>
+                    </xs:restriction>
+                    </xs:simpleType>  
+
+
+              <xs:element name="Datacenters">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:string" name="Datacenter"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="MaintenanceWindows">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:string" name="MaintenanceWindow"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="IpRanges">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:string" name="IpRange"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element type="xs:string" name="Owner"/>
+              <xs:element name="Tags">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:string" name="Tag" maxOccurs="unbounded" minOccurs="0"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Machines">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Machine">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element type="xs:string" name="Name"/>
+                          <xs:element name="Roles">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element type="xs:string" name="Role" maxOccurs="unbounded" minOccurs="0"/>
+                        
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="Locale"/>
+                          <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="NA"/>
+                                <xs:enumeration value="EU"/>
+                                <xs:enumeration value="GLOBAL"/>
+                            </xs:restriction>
+                            </xs:simpleType>
+                          
+                          <xs:element type="xs:string" name="Datacenter"/>
+                          <xs:element type="xs:byte" name="CPUs"/>
+                          <xs:element type="xs:short" name="MemoryMB"/>
+                          <xs:element name="Disks">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="Disk">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element type="xs:byte" name="SizeGB"/>
+                                      <xs:element type="xs:string" name="Type"/>
+                                      <xs:element type="xs:string" name="Letter"/>
+                                    </xs:sequence>
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element type="xs:string" name="OS"/>
+                          <xs:element type="xs:string" name="Owner"/>
+                          <xs:element name="Tags">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element type="xs:string" name="Tag" maxOccurs="unbounded" minOccurs="0"/>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

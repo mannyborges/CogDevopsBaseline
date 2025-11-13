@@ -31,7 +31,7 @@
 #      - Non-Private functions are supposed to be used in Packages library
 #      - Private functions are supposed to be used in Non-Private functions in this Common library
 #
-#   Baseline script required functions
+#   Baseline script required functions 
 #      Do-InitialSteps()
 #      Do-FinalSteps()
 #   System functions
@@ -43,13 +43,12 @@
 #      Check-EnvPath([string]$PathEntry, [switch]$Remove)
 #      Check-EnvironmentVariable([string]$Name, [string]$Value, [switch]$Remove)
 #      Check-RegistrySetting([string]$Path, [string]$Property = '', $Value, $PropertyType)
-#      Check-Service([string]$Name, $DisplayName, $BinaryPathName, $Description, $UserName, $StartupType, [switch]$ForceStartStop, [switch]$ForceRestart)
+#      Check-Service([string]$Name, $DisplayName, $BinaryPathName, $Description, $UserName, $StartupType, [switch]$ForceStartStop, [switch]$ForceRestart)  
 #      Check-Service-StartupType([string]$Name, [switch]$Auto, [switch]$Manual, [switch]$Disabled, [switch]$ForceStartStop, [switch]$ForceRestart)
 #      Check-Application([string]$AppName, [string]$AppVersion, [string]$CmdPath, [string]$CmdArguments)
 #      Check-HotFix([string]$HotFixName, [string]$HotFixVersion, [string]$CmdPath, [string]$CmdArguments)
 #      Check-AppUninstall([string]$AppName)
 #      Check-VersionAppuninstall([string]$AppName, [string]$Version)
-#      Check-COMInterface([string]$SourceFile, [string]$TargetFile, [string]$InterfaceName, [string]$RegisterParams, [switch]$Unregister)
 #      Check-ScheduledTask([string]$Name, $XmlDefinition)
 #      Check-ScheduledTaskStatus([string]$Name, [switch]$Enable, [switch]$Disable)
 #      Check-ScheduledTaskRemoval([string]$Name)
@@ -62,14 +61,12 @@
 #      Check-DirectoryTree([string]$TargetPath, [string]$SourcePath, $SkipItems = @(), $SkipItemsIfExist = @())
 #      Check-Permissions([string]$Path, $Permissions = @(), [switch]$ExactMatch)
 #      Check-NetworkShare([string]$Share, [string]$Path, $Permissions = @('Everyone,READ'), $Limit = $null)
-#   XML functions
+#   XML functions 
 #      Check-XmlProperty([string]$XmlPath, [string]$ElementXpath, [string]$Attribute, [string]$Value, $NameSpaces = @{})
 #   Log functions
 #      Write-Log([string]$Message = "", [string]$EntryType = "INFO", [string]$Category = "", [switch]$ResultOK, [switch]$ResultFailure, [string]$ResultMessage = "")
 #   Misc functions
 #      Get-UserInput([string]$Msg, [string]$Format, $DefaultValue)
-#      Get-InstalledAppVersion([string]$AppName)
-#      Get-InstalledAppLocation([string]$AppName)
 #      Get-BaselineCredential([string]$UserName, [switch]$ReturnPasswordOnly)
 #      Get-HttpRequest([string]$URL)
 #   Private functions
@@ -97,31 +94,28 @@ $Script:AltMachinesXMLFile = "Machines.xml"
 $Script:AltEnvironmentsXMLFile = "Environments.xml"
 
 # [string]$Script:Environment
-# These variables contain Environment (QA/PROD/DEV), Environment name (e.g. QA13, DEVA, ..)
-# and Environment type (e.g. QA, PERF, GOV, MPS, DEV, PROD, ..)
-# of the machine your script is running on.
 # Use it for putting logic into your packages, e.g. for switching between 
 # copying config files for differrent environments.
 # DO NOT modify this variable anywhere in your code!
-# (info from OpsDeploy API)
+
 [string]$Script:Environment = ""
 [string]$Script:EnvironmentName = ""
 [string]$Script:EnvironmentType = ""
-[string]$Script:ClusterName = ""
+[string]$Script:RoleName = ""  # Role name for the machine (e.g. JUMP, APP, DB, WEB, etc.)
 
-# Implementation Branch of machine environment (e.g. Production, QA, DEV ....)
-# (info from OpsDeploy API)
+# Implementation Branch of machine environment - we dont use that methodology but its easy to make it for future use now.
+
 [string]$Script:ImplementationBranch = ""
 
 # Name of DataCenter where the machine is located (e.g. Natick)
-# (info from OpsDeploy API)
+
 [string]$Script:DataCenter = ""
 
 # Domain name based on datacenter
-[string]$Script:DomainName = ""
+[string]$Script:DomainName = "NATICK-NT"  # default domain name	We can override it in Do-InitialSteps() function and by XML DB or API returns
 
-# Supported locales for the machine (e.g. NA, DWP, Global)
-# (info from OpsDeploy API)
+# Supported locales for the machine (e.g. NA, EU, Global)
+
 [array]$Script:SupportedLocales = @()
 
 # Default script action is validation.
@@ -261,124 +255,13 @@ function Do-InitialSteps()
 		{ Write-Log -Message ("Log file: " + $Script:LogFile) }
 	else
 		{ Write-Log -Message "Log file: none" }
-	#if ($Script:AltXmlDBFolder -ne "")
-	#	{ Write-Log -Message ("Illuminations: " + $Script:AltXmlDBFolder + " (xml folder)") }
-	#else
-	#	{ Write-Log -Message ("Illuminations: " + $Script:OpsDeployApiURL) }
+
 	Write-Log -Message "**************************************************************************************"
 	Write-Log -Message ("Start Time: " + $Script:Date)
 	Write-Log -Message ("UserName: " + $Script:UserName)
 	Write-Log -Message ("Machine: " + $Script:ComputerName)
-	
-	
-	
-	# getting Machine info from OpsDeploy or alternate XML files
-	if ($Script:AltXmlDBFolder -ne "")
-	{
-		# using Xml DB
-		if (-not (Test-Path -Path ($Script:AltXmlDBFolder + $Script:AltMachinesXMLFile)))
-		{
-			Write-Log -EntryType "FATAL" -Message "$Script:AltMachinesXMLFile not found."
-			Do-FinalSteps
-			Exit
-		}
-		if (-not (Test-Path -Path ($Script:AltXmlDBFolder + $Script:AltEnvironmentsXMLFile)))
-		{
-			Write-Log -EntryType "FATAL" -Message "$Script:AltEnvironmentsXMLFile not found."
-			Do-FinalSteps
-			Exit
-		}
-		
-		$MachinesInfoXML = [xml](Get-Content -Path ($Script:AltXmlDBFolder + $Script:AltMachinesXMLFile))
-		$MachineInfoXML = $MachinesInfoXML.Machines.Machine | ? { $_.Name -eq $Script:ComputerName }
-		if ($MachineInfoXML -eq $null)
-		{
-			Write-Log -EntryType "FATAL" -Message "Machine definition in $Script:AltMachinesXMLFile not found."
-			Do-FinalSteps
-			Exit
-		}
-		$Script:EnvironmentName = $MachineInfoXML.Environment
-		$Script:DataCenter = $MachineInfoXML.DataCenter
-        $Script:ClusterName = $MachineInfoXML.Cluster
-		[array]$Script:SupportedLocales = $MachineInfoXML.SupportedLocales.SupportedLocale
-		
-		$EnvironmentsInfoXML = [xml](Get-Content -Path ($Script:AltXmlDBFolder + $Script:AltEnvironmentsXMLFile))
-	}
-	#else
-	#{
-	#	# using Illuminations
-	#	$MachineInfoXML = Get-HttpRequest -URL ($Script:OpsDeployApiURL+"/machines/"+$Script:ComputerName)
-	#	
-	#	if ($MachineInfoXML -eq $null)
-	#	{
-	#		Write-Log -EntryType "FATAL" -Message "Illuminations error."
-	#		Do-FinalSteps
-	#		Exit
-	#	}
-	#	
-	#	$Script:EnvironmentName = $MachineInfoXML.Machine.Environment
-	#	$Script:DataCenter = $MachineInfoXML.Machine.DataCenter
-    #    $Script:ClusterName = $MachineInfoXML.Machine.Cluster
-	#	[array]$Script:SupportedLocales = $MachineInfoXML.Machine.SupportedLocales.SupportedLocale
-	#	
-	#	$EnvironmentsInfoXML = Get-HttpRequest -URL ($Script:OpsDeployApiURL+"/environments")
-	#}
-	
-	$EnvironmentInfoXML = $EnvironmentsInfoXML.Environments.Environment | ? { $_.Name -eq $Script:EnvironmentName }
-	if ($EnvironmentInfoXML -eq $null)
-	{
-		Write-Log -EntryType "FATAL" -Message "Environment definition not found."
-		Do-FinalSteps
-		Exit
-	}
-	$Script:EnvironmentType = $EnvironmentInfoXML.Type
-	$Script:ImplementationBranch = $EnvironmentInfoXML.ImplementationBranch
-		
-	# PROD
-	if ($Script:EnvironmentType -imatch 'Prod')
-		{ $Script:Environment = 'PROD' }
-	# DEV
-	elseif ($Script:EnvironmentType -imatch 'Dev')
-		{ $Script:Environment = 'DEV' }
-	# QA
-	else
-		{ $Script:Environment = 'QA' }
-	
-	# setting DomainName according to region
-	if ($Script:DataCenter -eq "Swindon")
-	{
-		if ($Script:EnvironmentName -eq 'QA1')
-		{
-			$Script:DomainName = "QA1UKMGS"
-			$Script:StoragePath = "\\QA1ORCH801\d\P4"
-		}
-		elseif ($Script:EnvironmentName -eq 'QA2')
-		{
-			$Script:DomainName = "QA2UKMGS"
-			$Script:StoragePath = "\\QA2ORCH801\d\P4"
-		}
-		else
-		{
-			$Script:DomainName = "UKMGS"
-			$Script:StoragePath = "\\ORCH801\d\P4"
-		}
-	}
-	elseif ($Script:DataCenter -eq "Bristol")
-	{
-		$Script:DomainName = "UKMGS"
-		$Script:StoragePath = "\\ORCH801\d\P4"
-	}
-	else
-	{
-		$Script:StoragePath = "\\SYNC201\d\p4\deploy"
-		$Script:DomainName = "OPS"
-	}
-	
-	
-	
-	Write-Log -Message ("Environment: " + $Script:Environment + ", Env name: " + $Script:EnvironmentName + ", Env type: " + $Script:EnvironmentType)
-	Write-Log -Message ("Implementation branch: " + $Script:ImplementationBranch)
-	
+	Write-Log -Message ("Environment: " + $Script:Environment)
+	Write-Log -Message ("Domain Name: " + $Script:DomainName)
 	Write-Log -Message ("Validate only mode: " + $Script:ValidateOnly)
 	Write-Log -Message ("Automatic mode: " + $Script:AutomaticMode)
 	if ($Script:AutomaticMode -and $Script:DoPasswordsCheck)
@@ -494,8 +377,7 @@ function Check-WindowsFeatures([string[]]$Features = @())
 		
 		$Result = Add-WindowsFeature $FeaturesNeeded
 		
-#		if ($?)
-#		{
+
 			foreach ($Feature in $Result.FeatureResult)
 			{
 				if ($Feature.Success -eq $true)
@@ -503,11 +385,7 @@ function Check-WindowsFeatures([string[]]$Features = @())
 				else
 					{ Write-Log -Message ("-> Feature: "+$Feature.DisplayName) -EntryType "ERROR" -ResultFailure -ResultMessage ("Restart needed: "+$Feature.RestartNeeded) }
 			}
-#		}
-#		else
-#		{
-#			Write-Log -Message ("-> Error message: "+$Error[0].Exception.Message) -EntryType "ERROR"
-#		}
+
 	}
 }
 
@@ -3435,7 +3313,8 @@ function Get-HttpRequest([string]$URL)
     $request = [System.Net.WebRequest]::Create($URL)
 	$request.Proxy = $null
     $request.Method = "GET"
-    $request.Accept = "application/xml"  # Might make an input for other forms of returns like JSON in the future
+    $request.Accept = "application/xml"  # Might make an input for other forms of returns like JSON, you can always copy pasta this function 
+	                                     # and modify it for your needs in the role specific shared script
 	$response = $request.GetResponse()
 		
     try
@@ -3479,14 +3358,7 @@ function Get-HttpRequest([string]$URL)
 #################################################
 function Private-CheckSystemRequirements()
 {
-	$OS = (get-wmiobject Win32_OperatingSystem).version
-	if ($OS -lt '6.1')
-	{
-		Write-Log -EntryType Fatal -Message "Operating System must be Windows Server 2008 R2 or higher to run this script"
-		Do-FinalSteps
-		Exit
-	}
-	
+	# checking for admin rights
 	if (-not $Script:ValidateOnly) # allowing running validation under any account
 	{
 		$user = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -3584,7 +3456,7 @@ function Private-PrintHelp()
 	Write-Host 
 	Write-Host "script.ps1 [-help|-h] [-environment|-env <ENV>] [-install|-i] [-automatic|-a]"
 	Write-Host "           [-logdir|-ld <DIR>] [-nolog|-nl] [-dopwdcheck|-dpc] [-errors|-e]"
-	Write-Host "           [-illurl <URL>] [-xmldb <DIR>]"
+	Write-Host "           [-xmldb <DIR>]"
 	Write-Host
 	Write-Host "  -help               Show this help"
 	Write-Host "  -environment <ENV>  Set manually environment the server belongs to (PROD/QA/DEV)"
@@ -3594,8 +3466,8 @@ function Private-PrintHelp()
 	Write-Host "  -nolog              Do not create local log"
 	Write-Host "  -errors             Script will also print PS errors"
 	Write-Host "  -dopwdcheck         Script will validate passwords if any (manual input is required)"
-	#Write-Host "  -illurl <URL>       Illuminations URL (default $Script:OpsDeployApiURL)"
-	Write-Host "  -xmldb <DIR>        Instead of Illuminations use Machines.xml and Environments.xml from <DIR> folder"
+	#Write-Host "  -illurl <URL>       API URL (default $Script:OpsDeployApiURL)" # add [-illurl <URL>] back when needed
+	Write-Host "  -xmldb <DIR>        Instead of API use Machines.xml and Environments.xml from <DIR> folder"
 	Write-Host
 }
 
@@ -3643,48 +3515,10 @@ function Private-ReviewFileHeader()
         # only perform on files, not directories
     	if ($item -isnot [System.IO.DirectoryInfo])
     	{
-            $RegExTest = gc $item.FullName | Select-String "Header, do NOT" |  foreach { $_.toString() -replace '#','' -replace '\$','' -replace '\|','' -replace 'Header, ', '' -replace 'do NOT touch: ', '' }
-            $DateTime = $($item.LastWriteTime.ToString('yyyy/MM/dd HH:mm:ss'))
+           $DateTime = $($item.LastWriteTime.ToString('yyyy/MM/dd HH:mm:ss'))
             $NameFromLocalSystem = $item.Name
             if ($NameFromLocalSystem.Length -gt 30){ $ShortNameFromLocalSystem = $NameFromLocalSystem.Substring(0, $NameFromLocalSystem.IndexOf("", 30)) }
             else {$ShortNameFromLocalSystem = $NameFromLocalSystem }
-            
-            if ($RegExTest)
-            {
-                $MatchRegEx = [regex]::matches($RegExTest, '(\d+/\d+/\d+ \d+:\d+:\d+|\S+)')
-                $NameFromFile = $($MatchRegEx[1].Value).Split('/')[-1]
-                $NameFromFile = $($NameFromFile).Split('\')[-1]
-                if ($NameFromFile.Length -gt 30){ $ShortNameFromFile = $NameFromFile.Substring(0, $NameFromFile.IndexOf("", 30)) }
-                else {$ShortNameFromFile = $NameFromFile }
-                
-                if ($NameFromFile)
-                {
-                    $DateTimeSource = $($MatchRegEx[3].Value)
-                    $Author = $($MatchRegEx[5].Value)
-                    $Change = $($MatchRegEx[7].Value)
-                    $FileRevision = $($MatchRegEx[9].Value)
-                    if ($NameFromFile -ne $NameFromLocalSystem)
-                    {
-                        $Message = ("$HistoryFormat" -f "$Change","$FileRevision","$Author","$DateTime","$DateTimeSource","Header malformed: $($ShortNameFromLocalSystem)")
-                        Write-Log -Message "$Message"
-                    }
-                    else
-                    {
-                        $Message = ("$HistoryFormat" -f "$Change","$FileRevision","$Author","$DateTime","$DateTimeSource","$($ShortNameFromLocalSystem)")
-                        Write-Log -Message "$Message"
-                    }
-                }
-                else
-                {
-                    $Message = ("$HistoryFormatNoHistory" -f "","$DateTime","Header not found: $($ShortNameFromLocalSystem)")
-                    Write-Log -Message "$Message"
-                }
-            }
-            else
-            {
-                $Message = ("$HistoryFormatNoHistory" -f "","$DateTime","RegEx Test Failed: $($ShortNameFromLocalSystem)")
-                Write-Log -Message "$Message"
-            }
     	}
     }
 }

@@ -2,14 +2,14 @@
 # 
 #
 #
-#   Cluster SHARED Baseline Library
+#   role SHARED Baseline Library
 #
 #
 #	Use this as include in your specific baseline script
 #   Can be done by placing either line at the top of your script (without quotes):
-#      ". .\include\cluster.xxx.base.ps1"
-#      ". d:\BaselineScript\include\cluster.xxx.base.ps1"
-#      ". \\server\path\to\cluster.xxx.base.ps1"
+#      ". .\include\role.xxx.base.ps1"
+#      ". d:\BaselineScript\include\role.xxx.base.ps1"
+#      ". \\server\path\to\role.xxx.base.ps1"
 #      (NOTE the DOT at beginning of line!)
 #
 #
@@ -23,68 +23,10 @@
 #
 #   FUNCTIONS LIST:
 #      - to get functions list, run:
-#        gc cluster.shared.base.ps1 | select-string "^function|functions - begin$" | foreach { $_.toString() -replace '^function', '#     ' -replace '- begin', '' }
+#        gc role.shared.base.ps1 | select-string "^function|functions - begin$" | foreach { $_.toString() -replace '^function', '#     ' -replace '- begin', '' }
 #
-#   cluster SHARED functions
-#      Check-DST()
-#      Check-PSRemoting()
-#      Check-MachineKey()
-#      Check-MachineKey-WebConfig()
-#	   Check-MachineKey4CompatibilityModeSetting-WebConfig()
-#      Check-ASPNETSessionState()
-#      Check-ApplicationLog()
-#      Check-IISRootFolder()
-#      Check-IISDefaultWebSite()
-#      Check-IISLogDirectory()
-#      Check-IISHttpErrorsLocation()
-#      Check-IISFoldersPermissions()
-#      Check-IISF5XForwardedForFilter()
-#      Remove-IISF5XForwardedForModulex86()
-#      Check-IISF5XForwardedForModule()
-#      Check-IISF5XForwardedForModule64()
-#      Check-IISAppPool32BitMode()
-#      Check-IISAppcmdPATH()
-#      Check-IISHttpErrorsOverride()
-#      Check-IISDefaultDocuments-Monster2.0()
-#      Check-SessionStateOLD()
-#      Check-SMTPService()
-#      Check-SSLv2Disabled()
-#      Check-SSLv3Disabled()
-#      Check-DLLs()
-#      Check-CryptoComproxy()
-#      Check-QueueSyncTaskVbs()
-#      Check-MonsterPerlLibraries()
-#      Check-ConfigureExceptionMgmt()
-#      Check-Administrators()
-#      Check-EventLogReaders()
-#      Check-ConfigFolder()
-#      Check-NetworkShares()
-#      Check-DisableStrictNameChecking()
-#      Check-WindowsFeatures-WEBADMINOPM()
-#      Check-DirectoriesAndPermissions-WEBADMINOPM()
-#      Check-NetworkShares-WEBADMINOPM()
-#      Check-IISDefaultDocuments-WEBADMINOPM()
-#      Check-WindowsFeatures-JBAT()
-#      Check-DirectoriesAndPermissions-JBAT()
-#      Check-BGWConfig-JBAT()
-#      Check-WindowsFeaturesNETAPP()
-#      Check-Permissions-PCIFolders()
-#      Check-WindowsFeatures-FRAUDAA()
-#      Check-DirectoriesAndPermissionsNETAPP()
-#      Check-NetworkSharesNETAPP()
-#      Check-WindowsFeaturesNETSVCS()
-#      Check-DirectoriesAndPermissionsNETSVCS()
-#      Check-NetworkSharesNETSVCS()
-#      Check-DirectoriesAndPermissionsNETWEB()
-#      Check-NetworkSharesNETWEB()
-#      Check-IncreasedHttpHeaderSize-DWP-NETWEB()
-#      Check-WindowsFeaturesUNICA()
-#      Check-DirectoriesAndPermissionsUNICA()
-#      Check-NetworkSharesUNICA()
-#      Check-ScaleoutClient()
-#      Check-Mongos()
-#      Check-QueueSyncTaskVbs_Removed()
-#      Check-Java7-0-80-x64WithSafenet8()
+#   role SHARED functions
+
 #
 ########################################################################################################
 
@@ -92,7 +34,7 @@
 
 ########################################################################################################
 #
-#   cluster SHARED functions - begin
+#   role SHARED functions - begin
 #
 ########################################################################################################
 
@@ -122,15 +64,13 @@ function Check-DST()
 #################################################
 function Check-PSRemoting()
 {
-    #not required in DWP
-    if ($Script:SupportedLocales -notcontains 'DWP')
-    {
+
+
         $ServiceName = "WinRM"
         
-        $TrustedHosts = "opsdeploy101,opsdeploy201,opsdeploy301,opsdeploy401"
+        $TrustedHosts = "AM-IT-t2100VRjd"
           
-        if ($Script:Environment -ne "PROD")
-        {
+   
             Write-Log
             Write-Log -Message "Checking Powershell Remoting ..."
             Write-Log
@@ -222,8 +162,8 @@ function Check-PSRemoting()
                 }
             }
         }
-    }
-}
+    
+
 
 
 
@@ -238,8 +178,7 @@ function Check-SSLv2Disabled()
 	Write-Log
 	Write-Log -Message "Checking registry for obsolete SSL protocols, ciphers and possibly mice  ..."
 	Write-Log
-    if ($Script:SupportedLocales -contains 'NA')
-	{
+
         Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Protocols\SSL 2.0\Server" -Property "Enabled" -Value 0 -PropertyType dword
         Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Protocols\SSL 2.0\Client" -Property "Enabled" -Value 0 -PropertyType dword
         Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Protocols\SSL 3.0\Server" -Property "Enabled" -Value 0 -PropertyType dword
@@ -253,7 +192,6 @@ function Check-SSLv2Disabled()
 		Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Ciphers\RC2 56/128" -Property "Enabled" -Value 0 -PropertyType dword
 		Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Ciphers\RC2 40/128" -Property "Enabled" -Value 0 -PropertyType dword
 		Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Ciphers\RC2 128/128" -Property "Enabled" -Value 0 -PropertyType dword
-	}
 	Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Protocols\TLS 1.0\Server" -Property "Enabled" -Value 1 -PropertyType dword
 	Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Protocols\TLS 1.0\Client" -Property "Enabled" -Value 1 -PropertyType dword
 	Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Ciphers\RC2 128/128" #thisline doesn't do anything except a testpatth
@@ -269,11 +207,10 @@ function Check-SSLv3Disabled()
 	Write-Log
 	Write-Log -Message "Checking registry for SSLv3 disabled ..."
 	Write-Log
-    if ($Script:SupportedLocales -contains 'NA')
-	{
+
         Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Protocols\SSL 3.0\Server" -Property "Enabled" -Value 0 -PropertyType dword
         Check-RegistrySetting -Path "HKLM:\System\CurrentControlSet\Control\SecurityProviders\SChannel\Protocols\SSL 3.0\Client" -Property "Enabled" -Value 0 -PropertyType dword
-    }
+    
 }
 
 
@@ -329,62 +266,14 @@ function Check-Administrators()
 	
 	$Script:ComputerName =  $Env:COMPUTERNAME
 	
-	if ($Script:Environment -eq 'PROD')
-	{
-        # NA only
-		if ($Script:SupportedLocales -contains 'NA')
-        {
-            Check-GroupMembership -IdentityReference ("$Script:DomainName\Batchjob") -Group "Administrators"
-        }
-		# NA and DWP production
+# $Script:DomainName is set in Do-InitialSteps function in BaselineScripts\Baseline_Common.ps1
 		Check-GroupMembership -IdentityReference ("$Script:DomainName\Domain Admins") -Group "Administrators"
-		Check-GroupMembership -IdentityReference ("$Script:DomainName\ProdEng") -Group "Administrators"
-		Check-GroupMembership -IdentityReference ("$Script:DomainName\ServerMgmt") -Group "Administrators"
-	}
-	elseif ($Script:Environment -eq 'DEV')
-	{
-		if($Script:ComputerName -match  "NETWEBL")
-        {
-            Check-GroupMembership -IdentityReference ("$Script:DomainName\Domain Admins") -Group "Administrators"
-		    Check-GroupMembership -IdentityReference ("$Script:DomainName\ProdEng") -Group "Administrators"
-		    Check-GroupMembership -IdentityReference ("$Script:DomainName\ServerMgmt") -Group "Administrators"
-	        Check-GroupMembership -IdentityReference ("$Script:DomainName\SSOAdmin") -Group "Administrators"
-        }
-        else
-        {
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\Batchjob") -Group "Administrators"
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\Domain Admins") -Group "Administrators"
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\intbatch") -Group "Administrators"
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\ProdEng") -Group "Administrators"
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\QAAdmins") -Group "Administrators"
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\ServerMgmt") -Group "Administrators"
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\Dev-Admins") -Group "Administrators"
-		}
-	}
-	elseif ($Script:Environment -eq 'QA')
-	{
-		if($Script:ComputerName -match  "NETWEBL")
-        {
-            Check-GroupMembership -IdentityReference ("$Script:DomainName\Domain Admins") -Group "Administrators"
-		    Check-GroupMembership -IdentityReference ("$Script:DomainName\ProdEng") -Group "Administrators"
-		    Check-GroupMembership -IdentityReference ("$Script:DomainName\QAAdmins") -Group "Administrators"
-		    Check-GroupMembership -IdentityReference ("$Script:DomainName\ServerMgmt") -Group "Administrators"
-            Check-GroupMembership -IdentityReference ("$Script:DomainName\SSOAdmin") -Group "Administrators"
-
-        }
-		else
-		{
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\Domain Admins") -Group "Administrators"
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\ProdEng") -Group "Administrators"
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\QAAdmins") -Group "Administrators"
-			Check-GroupMembership -IdentityReference ("$Script:DomainName\ServerMgmt") -Group "Administrators"
-		}
-        # NA only
-		if ($Script:SupportedLocales -contains 'NA')
-        {
-            Check-GroupMembership -IdentityReference ("$Script:DomainName\qabatch") -Group "Administrators"
-        }
-	}
+		Check-GroupMembership -IdentityReference ("$Script:DomainName\mborges") -Group "Administrators"
+		Check-GroupMembership -IdentityReference ("$Script:DomainName\SRV-IS SolarOps") -Group "Administrators"
+        Check-GroupMembership -IdentityReference ("$Script:DomainName\SRV-Local Admin") -Group "Administrators"
+        Check-GroupMembership -IdentityReference ("$Script:DomainName\SRV-Sec-Admins") -Group "Administrators"
+        Check-GroupMembership -IdentityReference ("$Script:DomainName\WKS-Lansweep Admin") -Group "Administrators"
+	
 }
 
 
@@ -398,19 +287,9 @@ function Check-EventLogReaders()
         Write-Log
         Write-Log -Message "Checking users/groups in the Event Log Readers group ($Script:Environment) ..."
         Write-Log
-        if ($Script:Environment -eq 'PROD')
-        {
-            Check-GroupMembership -IdentityReference ("$Script:DomainName\SiteEventLogReaders") -Group "Event Log Readers"
-        }
-        elseif ($Script:Environment -eq 'DEV')
-        {
-            Check-GroupMembership -IdentityReference "\Everyone" -Group "Event Log Readers"
-            Check-GroupMembership -IdentityReference "NA\QA" -Group "Event Log Readers"
-        }
-        elseif ($Script:Environment -eq 'QA')
-        {
-        	Check-GroupMembership -IdentityReference "\Everyone" -Group "Event Log Readers"
-        }
+  
+            Check-GroupMembership -IdentityReference ("$Script:DomainName\SiteEventLogReaders") -Group "Event Log Readers"  # not sure this exists but we must have something i am guessing?
+
     }
 }
 
@@ -430,30 +309,10 @@ function Check-NetworkShares()
 	}
 	elseif ($Script:Environment -eq 'DEV')
 	{
-		Check-NetworkShare -Share "C" -Path "C:\" -Permissions "Everyone,READ"
-		Check-NetworkShare -Share "D" -Path "D:\" -Permissions "Everyone,READ"
+		# Check-NetworkShare -Share "C" -Path "C:\" -Permissions "Everyone,READ"
+		# Check-NetworkShare -Share "D" -Path "D:\" -Permissions "Everyone,READ"
 	}
-	elseif ($Script:Environment -eq 'QA')
-	{
-        if ($Script:SupportedLocales -contains 'DWP')
-		{
-			Check-NetworkShare -Share "C" -Path "C:\" -Permissions (
-			"$Script:DomainName\Site Log Readers,READ",
-			"$Script:DomainName\Site Log Admins,CHANGE"
-			)
-        	Check-NetworkShare -Share "D" -Path "D:\" -Permissions (
-			"$Script:DomainName\Site Log Readers,READ",
-			"$Script:DomainName\Site Log Admins,CHANGE"
-			)            
-            # set permissions on the log folder 
-            Check-Permissions "d:\logs" -Permissions ("$Script:DomainName\Site Log Admins:(OI)(CI)(F)", "$Script:DomainName\Site Log Readers:(OI)(CI)(R)")
-		}
-		else
-		{
-			Check-NetworkShare -Share "C" -Path "C:\" -Permissions "Everyone,READ"
-			Check-NetworkShare -Share "D" -Path "D:\" -Permissions "Everyone,READ"
-        }
-	}
+	
 }
 
 
@@ -467,7 +326,7 @@ function Check-NetworkShares()
 
 ########################################################################################################
 #
-#   cluster SHARED functions - end
+#   role SHARED functions - end
 #
 ########################################################################################################
 
